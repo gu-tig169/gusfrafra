@@ -1,28 +1,9 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
+
 import "./Model.dart";
 import "./TaskList.dart";
 import "./AddTask.dart";
-
-void main() {
-  var state = MyState();
-
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => state,
-      child: MyApp(),
-    ),
-  );
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: MainView(),
-    );
-  }
-}
 
 class MainView extends StatelessWidget {
   Widget build(BuildContext context) {
@@ -30,34 +11,21 @@ class MainView extends StatelessWidget {
       appBar: AppBar(
         title: Text("TIG169 - To Do App"),
         actions: [
-          _taskFilter(),
+          _taskFilterMenu(context),
         ],
       ),
       body: Consumer<MyState>(
-        builder: (context, state, child) => TaskList(state.list),
+        builder: (context, state, child) =>
+            TaskList(_filterTasks(state.list, state.filterBy)),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          var newTask = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddTask(),
-            ),
-          );
-          if (newTask != null) {
-            Provider.of<MyState>(context, listen: false).addTask(newTask);
-          }
-        },
-        tooltip: "Lägg till uppgift",
-        child: Icon(Icons.add),
-      ),
+      floatingActionButton: _addTaskButton(context),
     );
   }
 
-  Widget _taskFilter() {
+  Widget _taskFilterMenu(context) {
     return PopupMenuButton(
       onSelected: (isSelected) {
-        print(isSelected);
+        Provider.of<MyState>(context, listen: false).setFilterBy(isSelected);
       },
       itemBuilder: (BuildContext context) => [
         PopupMenuItem(child: Text("Alla"), value: "Both"),
@@ -66,4 +34,34 @@ class MainView extends StatelessWidget {
       ],
     );
   }
+
+  Widget _addTaskButton(context) {
+    return FloatingActionButton(
+      onPressed: () async {
+        var newTask = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddTask(),
+          ),
+        );
+        if (newTask != null) {
+          Provider.of<MyState>(context, listen: false).addTask(newTask);
+        }
+      },
+      tooltip: "Lägg till uppgift",
+      child: Icon(Icons.add),
+      backgroundColor: Theme.of(context).colorScheme.secondaryVariant,
+      foregroundColor: Colors.black87,
+      splashColor: Colors.tealAccent,
+    );
+  }
+}
+
+List<Tasks> _filterTasks(list, filterBy) {
+  if (filterBy == "Both") return list;
+  if (filterBy == "False")
+    return list.where((task) => task.finished == false).toList();
+  if (filterBy == "True")
+    return list.where((task) => task.finished == true).toList();
+  return null;
 }
